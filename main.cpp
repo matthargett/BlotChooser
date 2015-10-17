@@ -22,7 +22,7 @@ static void assertThatInkDictionaryIsValid(unordered_map<string, Ink> inkDiction
 }
 
 int main() {
-    ifstream inksStream("/Users/matt/Downloads/color_optimization/inks.json");
+    ifstream inksStream("/Users/matt/Downloads/blots_opt/blots.json");
     InkParser inkParser(inksStream);
     auto inkDictionary = inkParser.namesToRgb();
 
