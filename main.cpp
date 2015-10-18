@@ -1,9 +1,10 @@
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <sstream>
-#include <fstream>
+
 #include "InkParser.h"
 #include "RequestedColorParser.h"
 
@@ -12,7 +13,6 @@ using namespace std;
 #define assert_that(x) if (!(x)) throw std::runtime_error(string(string(#x) + " failed"))
 
 string findClosestCandidate(unordered_map<string, Ink> map, RequestedColor color, double maximumDeviation);
-double getEuclidianDistanceBetween(Color first, Color second);
 
 using namespace std;
 
@@ -34,8 +34,8 @@ int main() {
     auto requestedColors = requestedColorParser.requestedColors();
 
     // TODO: track remaining budget of allowed color deviation
-    const double MAGIC_NUMBER = 2.5f;    // magic number based on best evaluation results
-    double maximumDeviation = 330.0f / (requestedColors.size() * MAGIC_NUMBER);
+    const double MAGIC_NUMBER = 2.0f;    // magic number based on best evaluation results
+    double maximumDeviation = 329.99f / (requestedColors.size() * MAGIC_NUMBER);
 
     for (auto requestedColor : requestedColors) {
         cout << findClosestCandidate(inkDictionary, requestedColor, maximumDeviation) << endl;
@@ -55,7 +55,7 @@ string findClosestCandidate(unordered_map<string, Ink> inks, RequestedColor requ
 
     // find closest color
     for(auto ink : inks) {
-        double distance = getEuclidianDistanceBetween(ink.second.color, requestedColor.color);
+        double distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
 
         if (distance < bestDistance) {
             bestDistance = distance;
@@ -65,8 +65,8 @@ string findClosestCandidate(unordered_map<string, Ink> inks, RequestedColor requ
 
     // find next closest color, that is also cheaper, within our budget for color deviation
     for(auto ink : inks) {
-        double distance = getEuclidianDistanceBetween(ink.second.color, requestedColor.color);
-        if (std::abs(distance - bestDistance) < maximumDeviation) {
+        double distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
+        if (std::abs(distance - bestDistance) <= maximumDeviation) {
             if (ink.second.cost < bestCost) {
                 bestInk = ink.first;
                 bestCost = ink.second.cost;
@@ -79,8 +79,3 @@ string findClosestCandidate(unordered_map<string, Ink> inks, RequestedColor requ
     return bestInk;
 }
 
-double getEuclidianDistanceBetween(Color first, Color second) {
-    return ::sqrt(pow(second.r - first.r, 2)  +
-                  pow(second.g - first.g, 2) +
-                  pow(second.b - first.b, 2));
-}

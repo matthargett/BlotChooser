@@ -19,6 +19,8 @@ public:
     Color() {}
     Color(const Color& other): r(other.r), g(other.g), b(other.b) {}
 
+    double euclidianDistanceFrom(const Color &other);
+
     int r;
     int g;
     int b;
