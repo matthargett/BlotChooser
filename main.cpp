@@ -7,12 +7,11 @@
 
 #include "InkParser.h"
 #include "RequestedColorParser.h"
+#include "ColorMatcher.h"
 
 using namespace std;
 
 #define assert_that(x) if (!(x)) throw std::runtime_error(string(string(#x) + " failed"))
-
-string findClosestCandidate(unordered_map<string, Ink> map, RequestedColor color, double maximumDeviation);
 
 using namespace std;
 
@@ -23,12 +22,57 @@ static void assertThatInkDictionaryIsValid(unordered_map<string, Ink> inkDiction
     assert_that(inkDictionary["BH5386"].cost == 10.43f);
 }
 
+static void testThatColorMatcherChoosesCheapestWhenTwoColorsMatchPerfectly(void) {
+    unordered_map<string, Ink> inkDictionary {
+            {"expensive", Ink("000000", 1.0)},
+            {"cheapest_", Ink("000000", 0.1)}
+    };
+
+    RequestedColor requestedColor(Color("000000"), 1.0);
+    float deviationLimit = 0.0f;
+    ColorMatcher colorMatcher(inkDictionary, deviationLimit);
+    auto matchedColorName = colorMatcher.findClosestCandidate(requestedColor);
+
+    assert_that(matchedColorName == "cheapest_");
+}
+
+static void testThatColorMatcherChoosesCheapestWhenTwoColorsMatchWithinDeviationLimit(void) {
+    unordered_map<string, Ink> inkDictionary {
+            {"expensive", Ink("000000", 1.0)},
+            {"cheapest_", Ink("000001", 0.1)}
+    };
+
+    RequestedColor requestedColor(Color("000000"), 1.0);
+    float deviationLimit = 1.0f;
+    ColorMatcher colorMatcher(inkDictionary, deviationLimit);
+    auto matchedColorName = colorMatcher.findClosestCandidate(requestedColor);
+
+    assert_that(matchedColorName == "cheapest_");
+}
+
+static void testThatColorMatcherChoosesClosestWhenTwoColorsDoNotMatchWithinDeviationLimit(void) {
+    unordered_map<string, Ink> inkDictionary {
+            {"expensive", Ink("000000", 1.0)},
+            {"cheapest_", Ink("000001", 0.1)}
+    };
+
+    RequestedColor requestedColor(Color("000000"), 1.0);
+    float deviationLimit = 0.1f;
+    ColorMatcher colorMatcher(inkDictionary, deviationLimit);
+    auto matchedColorName = colorMatcher.findClosestCandidate(requestedColor);
+
+    assert_that(matchedColorName == "expensive");
+}
+
 int main() {
     ifstream inksStream("/Users/matt/Downloads/blots_opt/blots.json");
     InkParser inkParser(inksStream);
     auto inkDictionary = inkParser.namesToRgb();
 
     assertThatInkDictionaryIsValid(inkDictionary);
+    testThatColorMatcherChoosesCheapestWhenTwoColorsMatchPerfectly();
+    testThatColorMatcherChoosesCheapestWhenTwoColorsMatchWithinDeviationLimit();
+    testThatColorMatcherChoosesClosestWhenTwoColorsDoNotMatchWithinDeviationLimit();
 
     RequestedColorParser requestedColorParser(cin);
     auto requestedColors = requestedColorParser.requestedColors();
@@ -36,9 +80,10 @@ int main() {
     // TODO: track remaining budget of allowed color deviation
     const double MAGIC_NUMBER = 2.0f;    // magic number based on best evaluation results
     double maximumDeviation = 329.99f / (requestedColors.size() * MAGIC_NUMBER);
+    ColorMatcher colorMatcher(inkDictionary, maximumDeviation);
 
     for (auto requestedColor : requestedColors) {
-        cout << findClosestCandidate(inkDictionary, requestedColor, maximumDeviation) << endl;
+        cout << colorMatcher.findClosestCandidate(requestedColor) << endl;
     }
 
     // TODO: do last pass to look for further cost optimization with remaining color deviation budget
@@ -48,34 +93,4 @@ int main() {
     return 0;
 }
 
-string findClosestCandidate(unordered_map<string, Ink> inks, RequestedColor requestedColor, double maximumDeviation) {
-    double bestDistance = 1000000;
-    float bestCost = 1000000.0f;
-    string bestInk = "UNKNOWN";
-
-    // find closest color
-    for(auto ink : inks) {
-        double distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
-
-        if (distance < bestDistance) {
-            bestDistance = distance;
-            bestInk = ink.first;
-        }
-    }
-
-    // find next closest color, that is also cheaper, within our budget for color deviation
-    for(auto ink : inks) {
-        double distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
-        if (std::abs(distance - bestDistance) <= maximumDeviation) {
-            if (ink.second.cost < bestCost) {
-                bestInk = ink.first;
-                bestCost = ink.second.cost;
-            }
-        }
-    }
-
-    if (bestInk == "UNKNOWN") throw runtime_error("no ink found!");
-
-    return bestInk;
-}
 
