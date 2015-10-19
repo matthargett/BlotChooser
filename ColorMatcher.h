@@ -18,10 +18,11 @@ public:
         remainingDeviation_(totalDeviationAllowed), inkDictionary_(inkDictionary) {}
 
     std::string findClosestCandidate(const RequestedColor& color);
+    double remainingDeviationBudget(void);
 
 private:
     double remainingDeviation_;
-    const std::unordered_map<std::string, Ink>& inkDictionary_;
+    std::unordered_map<std::string, Ink> inkDictionary_;
 };
 
 
