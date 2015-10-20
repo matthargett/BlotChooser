@@ -12,11 +12,11 @@
 
 class Ink {
 public:
-    Ink(const std::string& color_, float cost_): color(color_), cost(cost_) {}
+    Ink(const std::string& color_, double cost_): color(color_), cost(cost_) {}
     Ink(const Ink& other) : color(other.color), cost(other.cost) {}
     Ink(): color("FFFFFF") {}
     Color color;
-    float cost;
+    double cost;
 };
 
 

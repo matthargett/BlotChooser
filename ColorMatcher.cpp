@@ -15,7 +15,6 @@ double ColorMatcher::remainingDeviationBudget() {
 
 string ColorMatcher::findClosestCandidate(const RequestedColor& requestedColor) {
     double bestDistance = this->remainingDeviation_;
-    float bestCost = 1000000.0f;
     string bestInk = "UNKNOWN";
 
     // find closest color
@@ -30,20 +29,34 @@ string ColorMatcher::findClosestCandidate(const RequestedColor& requestedColor) 
 
     if (bestInk == "UNKNOWN") throw runtime_error("no ink found!");
 
-    // TODO: extract into its own method and do in separate pass in main() after all colors are matched within deviation budget
-    // find next closest color, that is also cheaper, within our budget for color deviation
-//    for(auto ink : this->inkDictionary_) {
-//        double distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
-//        if (std::abs(distance - bestDistance) <= this->remainingDeviation_) {
-//            if (ink.second.cost < bestCost) {
-//                bestInk = ink.first;
-//                bestCost = ink.second.cost;
-//            }
-//        }
-//    }
-
     auto bestColor = this->inkDictionary_[bestInk].color;
     this->remainingDeviation_ -= requestedColor.color.euclidianDistanceFrom(bestColor);
 
     return bestInk;
+}
+
+string ColorMatcher::findCheaperCandidate(const RequestedColor& requestedColor, string bestInkName) {
+    auto bestInk = this->inkDictionary_[bestInkName];
+    auto bestDistance = bestInk.color.euclidianDistanceFrom(requestedColor.color);
+    // "undo" previous budget deduction that we may be replacing
+    this->remainingDeviation_ += bestDistance;
+    auto bestCost = bestInk.cost;
+    auto cheapestInkName = bestInkName;
+
+
+    for(auto ink : this->inkDictionary_) {
+        auto distance = ink.second.color.euclidianDistanceFrom(requestedColor.color);
+        if (distance <= this->remainingDeviation_) {
+            if (ink.second.cost < bestCost) {
+                cheapestInkName = ink.first;
+                bestCost = ink.second.cost;
+            }
+        }
+    }
+
+    auto cheapestColor = this->inkDictionary_[cheapestInkName].color;
+    this->remainingDeviation_ -= requestedColor.color.euclidianDistanceFrom(cheapestColor);
+
+
+    return cheapestInkName;
 }

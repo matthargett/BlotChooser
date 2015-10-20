@@ -18,6 +18,7 @@ public:
         remainingDeviation_(totalDeviationAllowed), inkDictionary_(inkDictionary) {}
 
     std::string findClosestCandidate(const RequestedColor& color);
+    std::string findCheaperCandidate(const RequestedColor& color, std::string bestInkMatch);
     double remainingDeviationBudget(void);
 
 private:
