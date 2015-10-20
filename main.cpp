@@ -183,6 +183,7 @@ static void testThatColorMatcherThrowsWhenThereIsNoMatchWithinColorDeviationBudg
     assert_that(colorMatcher.remainingDeviationBudget() == colorDeviationBudget);
 }
 
+
 int main() {
     ifstream inksStream("/Users/matt/Downloads/blots_opt/blots.json");
     InkParser inkParser(inksStream);
@@ -203,14 +204,30 @@ int main() {
     double maximumDeviation = 330.0f;
     unordered_map<string, string> requestedColorDictionary;
     ColorMatcher colorMatcher(inkDictionary, maximumDeviation);
+    RequestedColor mostExpensiveRequestedColor = requestedColors[0];
+    double mostExpensiveRequestedColorCost = 0.0f;
 
+
+    // get closest matches
     for (auto requestedColor : requestedColors) {
         requestedColorDictionary[requestedColor.color.rgbString()] = colorMatcher.findClosestCandidate(requestedColor);
+
+        auto totalCost = requestedColor.amount * inkDictionary[requestedColorDictionary[requestedColor.color.rgbString()]].cost;
+        if (totalCost >= mostExpensiveRequestedColorCost) {
+            mostExpensiveRequestedColorCost = totalCost;
+            mostExpensiveRequestedColor = requestedColor;
+        }
     }
 
-    // TODO: use remaining color deviation budget on most expensive inks first
+    // use remaining color deviation budget on most expensive ink first
+    auto bestMatch = requestedColorDictionary[mostExpensiveRequestedColor.color.rgbString()];
+    requestedColorDictionary[mostExpensiveRequestedColor.color.rgbString()] =
+            colorMatcher.findCheaperCandidate(mostExpensiveRequestedColor, bestMatch);
+
+    // TODO: create sorted list of requested colors based on cost and iterate in that order
+    // use remaining color deviation budget on rest of colors
     for (auto requestedColor : requestedColors) {
-        auto bestMatch = requestedColorDictionary[requestedColor.color.rgbString()];
+        bestMatch = requestedColorDictionary[requestedColor.color.rgbString()];
         requestedColorDictionary[requestedColor.color.rgbString()] =
                 colorMatcher.findCheaperCandidate(requestedColor, bestMatch);
     }
