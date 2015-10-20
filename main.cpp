@@ -204,30 +204,26 @@ int main() {
     double maximumDeviation = 330.0f;
     unordered_map<string, string> requestedColorDictionary;
     ColorMatcher colorMatcher(inkDictionary, maximumDeviation);
-    RequestedColor mostExpensiveRequestedColor = requestedColors[0];
-    double mostExpensiveRequestedColorCost = 0.0f;
 
 
     // get closest matches
     for (auto requestedColor : requestedColors) {
         requestedColorDictionary[requestedColor.color.rgbString()] = colorMatcher.findClosestCandidate(requestedColor);
-
-        auto totalCost = requestedColor.amount * inkDictionary[requestedColorDictionary[requestedColor.color.rgbString()]].cost;
-        if (totalCost >= mostExpensiveRequestedColorCost) {
-            mostExpensiveRequestedColorCost = totalCost;
-            mostExpensiveRequestedColor = requestedColor;
-        }
     }
 
-    // use remaining color deviation budget on most expensive ink first
-    auto bestMatch = requestedColorDictionary[mostExpensiveRequestedColor.color.rgbString()];
-    requestedColorDictionary[mostExpensiveRequestedColor.color.rgbString()] =
-            colorMatcher.findCheaperCandidate(mostExpensiveRequestedColor, bestMatch);
+    // use remaining color deviation budget on most expensive inks first
+    vector<RequestedColor> requestedColorsOrderedByCost = requestedColors;
 
-    // TODO: create sorted list of requested colors based on cost and iterate in that order
-    // use remaining color deviation budget on rest of colors
-    for (auto requestedColor : requestedColors) {
-        bestMatch = requestedColorDictionary[requestedColor.color.rgbString()];
+    sort(requestedColorsOrderedByCost.begin(), requestedColorsOrderedByCost.end(),
+         [&](const RequestedColor& first, const RequestedColor& second) -> bool
+         {
+             auto firstTotalCost = first.amount * inkDictionary[requestedColorDictionary[first.color.rgbString()]].cost;
+             auto secondTotalCost = second.amount * inkDictionary[requestedColorDictionary[second.color.rgbString()]].cost;
+             return firstTotalCost > secondTotalCost;
+         });
+
+    for (auto requestedColor : requestedColorsOrderedByCost) {
+        auto bestMatch = requestedColorDictionary[requestedColor.color.rgbString()];
         requestedColorDictionary[requestedColor.color.rgbString()] =
                 colorMatcher.findCheaperCandidate(requestedColor, bestMatch);
     }

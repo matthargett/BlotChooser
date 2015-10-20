@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const std::vector<RequestedColor> &RequestedColorParser::requestedColors() {
+const std::vector<RequestedColor>& RequestedColorParser::requestedColors() {
     if (requestedColors_.empty()) {
         readNamesFromStream();
     }
